@@ -7,10 +7,12 @@ let yt: Innertube | null = null;
 // Initialize the client (Singleton pattern)
 const getClient = async () => {
     if (!yt) {
-        console.log('Initializing YouTube InnerTube client...');
+        console.log('Initializing YouTube InnerTube client (ANDROID)...');
+        // Using ANDROID client to bypass signature/decipher issues common on server IPs
         yt = await Innertube.create({
             cache: new UniversalCache(false),
-            generate_session_locally: true
+            generate_session_locally: true,
+            device_client: 'ANDROID'
         });
         console.log('YouTube client initialized.');
     }
@@ -71,8 +73,8 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
         fileStream.end();
 
         // Wait for file to be fully written
-        await new Promise((resolve, reject) => {
-            fileStream.on('finish', () => resolve(outputPath));
+        await new Promise<void>((resolve, reject) => {
+            fileStream.on('finish', () => resolve());
             fileStream.on('error', reject);
         });
 
