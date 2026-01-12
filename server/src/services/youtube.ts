@@ -8,13 +8,42 @@ let yt: Innertube | null = null;
 const getClient = async () => {
     if (!yt) {
         console.log('Initializing YouTube InnerTube client (ANDROID)...');
-        // Using ANDROID client to bypass signature/decipher issues common on server IPs
-        yt = await Innertube.create({
+
+        // Prepare options
+        const options: any = {
             cache: new UniversalCache(false),
             generate_session_locally: true,
             // @ts-ignore
             device_client: 'ANDROID'
-        });
+        };
+
+        // Handle Cookies if provided (bypasses "Login Required" / IP blocks)
+        const envCookies = process.env.YOUTUBE_COOKIES;
+        if (envCookies) {
+            try {
+                // Determine if base64 or raw string
+                // A simple heuristic: if it contains "APSID=" it's likely raw, otherwise try decode
+                let cookieString = envCookies;
+
+                // If it looks like base64 (no common cookie parts), try decoding
+                if (!envCookies.includes('APSID=') && !envCookies.includes('VISITOR_INFO1_LIVE=')) {
+                    const decoded = Buffer.from(envCookies, 'base64').toString('utf-8');
+                    // Validation: check if checked decoded string looks like cookies
+                    if (decoded.includes('APSID=') || decoded.includes('VISITOR_INFO1_LIVE=')) {
+                        cookieString = decoded;
+                        console.log('Decoded YOUTUBE_COOKIES from Base64');
+                    }
+                }
+
+                // Innertube expects the cookie header string
+                options.cookie = cookieString;
+                console.log('Using provided YouTube Cookies for authentication');
+            } catch (e) {
+                console.warn('Failed to process YOUTUBE_COOKIES, proceeding as guest', e);
+            }
+        }
+
+        yt = await Innertube.create(options);
         console.log('YouTube client initialized.');
     }
     return yt;
