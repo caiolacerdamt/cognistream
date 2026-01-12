@@ -12,6 +12,7 @@ const getClient = async () => {
         yt = await Innertube.create({
             cache: new UniversalCache(false),
             generate_session_locally: true,
+            // @ts-ignore
             device_client: 'ANDROID'
         });
         console.log('YouTube client initialized.');

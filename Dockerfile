@@ -46,7 +46,7 @@ COPY --from=server-build /app/server/dist ./dist
 COPY --from=client-build /app/client/dist ./public
 
 # Expose port (must match process.env.PORT or default 3000)
-Expose 3000
+EXPOSE 3000
 
 # Start command
 CMD ["node", "dist/index.js"]
