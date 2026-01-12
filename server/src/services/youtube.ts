@@ -53,8 +53,7 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
         // Get the stream
         const stream = await youtube.download(videoId, {
             type: 'audio', // Download audio only
-            quality: 'best',
-            format: 'mp4'  // Container format (content is usually m4a/opus, but we save as mp3 ext for compatibility downstream)
+            quality: 'best'
         });
 
         console.log('Writing stream to file...');
