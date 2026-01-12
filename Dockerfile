@@ -19,7 +19,7 @@ RUN npm run build
 FROM node:20-slim AS server-build
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y build-essential python3 python-is-python3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/server
 COPY server/package*.json ./
