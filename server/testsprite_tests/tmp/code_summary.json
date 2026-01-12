@@ -1,0 +1,225 @@
+{
+    "tech_stack": [
+        "TypeScript",
+        "Express.js",
+        "Supabase",
+        "OpenAI",
+        "Google Generative AI (Gemini)",
+        "Multer"
+    ],
+    "features": [
+        {
+            "name": "Settings API",
+            "description": "API to manage API keys for different providers (OpenAI, Gemini)",
+            "files": [
+                "src/index.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "info": {
+                    "title": "Settings API",
+                    "version": "1.0.0"
+                },
+                "paths": {
+                    "/api/settings/keys/{provider}": {
+                        "get": {
+                            "summary": "Check if API key is configured",
+                            "parameters": [
+                                {
+                                    "name": "provider",
+                                    "in": "path",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "string"
+                                    }
+                                }
+                            ],
+                            "responses": {
+                                "200": {
+                                    "description": "Configuration status",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "configured": {
+                                                        "type": "boolean"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "/api/settings/keys": {
+                        "post": {
+                            "summary": "Save API key",
+                            "requestBody": {
+                                "required": true,
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "provider": {
+                                                    "type": "string"
+                                                },
+                                                "key": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "Success"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Process Video Stream",
+            "description": "Process a YouTube video URL with real-time SSE updates",
+            "files": [
+                "src/index.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/process-video/stream": {
+                        "post": {
+                            "summary": "Process video with streaming events",
+                            "description": "Extracts audio, transcribes, and summarizes via SSE",
+                            "requestBody": {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "url": {
+                                                    "type": "string"
+                                                },
+                                                "provider": {
+                                                    "type": "string"
+                                                },
+                                                "apiKey": {
+                                                    "type": "string"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "Stream of events (text/event-stream)"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Process Video",
+            "description": "Process a YouTube video URL (Standard JSON response)",
+            "files": [
+                "src/index.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/process-video": {
+                        "post": {
+                            "summary": "Process video",
+                            "requestBody": {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "url": {
+                                                    "type": "string"
+                                                },
+                                                "provider": {
+                                                    "type": "string"
+                                                },
+                                                "apiKey": {
+                                                    "type": "string"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "Processing result"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Process File",
+            "description": "Upload and process a local audio file",
+            "files": [
+                "src/index.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/process-file": {
+                        "post": {
+                            "summary": "Process uploaded file",
+                            "requestBody": {
+                                "content": {
+                                    "multipart/form-data": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "audio": {
+                                                    "type": "string",
+                                                    "format": "binary"
+                                                },
+                                                "provider": {
+                                                    "type": "string"
+                                                },
+                                                "apiKey": {
+                                                    "type": "string"
+                                                },
+                                                "userId": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "Processing result"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

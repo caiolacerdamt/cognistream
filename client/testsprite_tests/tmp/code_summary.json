@@ -1,0 +1,57 @@
+{
+    "tech_stack": [
+        "React",
+        "Vite",
+        "TypeScript",
+        "Tailwind CSS",
+        "Supabase",
+        "Lucide React"
+    ],
+    "features": [
+        {
+            "name": "Authentication Views",
+            "description": "Login and Register pages for user authentication via Supabase",
+            "files": [
+                "src/pages/Login.tsx",
+                "src/pages/Register.tsx",
+                "src/contexts/AuthContext.tsx"
+            ]
+        },
+        {
+            "name": "Dashboard",
+            "description": "Main user interface for audio transcription and management",
+            "files": [
+                "src/pages/Dashboard.tsx"
+            ]
+        },
+        {
+            "name": "Home Page",
+            "description": "Landing page of the application",
+            "files": [
+                "src/pages/Home.tsx"
+            ]
+        },
+        {
+            "name": "Settings",
+            "description": "User configuration page for API keys and preferences",
+            "files": [
+                "src/pages/Settings.tsx"
+            ]
+        },
+        {
+            "name": "Saved Summaries",
+            "description": "Archive of past transcriptions and summaries",
+            "files": [
+                "src/pages/SavedSummaries.tsx"
+            ]
+        },
+        {
+            "name": "Application Layout",
+            "description": "Main layout wrapper and protected route logic",
+            "files": [
+                "src/components/Layout.tsx",
+                "src/components/ProtectedRoute.tsx"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,471 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration with valid credentials",
+    "description": "Verify that a new user can successfully register with valid email and strong password.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to registration page"
+      },
+      {
+        "type": "action",
+        "description": "Enter valid email address and strong password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify registration success message or automatic login"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Registration with invalid email format",
+    "description": "Ensure the system shows an error when user attempts registration with an invalid email format.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open registration page"
+      },
+      {
+        "type": "action",
+        "description": "Input invalid email and valid password"
+      },
+      {
+        "type": "action",
+        "description": "Submit registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that an appropriate email format error message is displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login with correct credentials",
+    "description": "Verify that a registered user can login successfully with the correct email and password.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Enter registered email and correct password"
+      },
+      {
+        "type": "action",
+        "description": "Click login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure user is redirected to home/dashboard page"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "User Login with incorrect password",
+    "description": "Ensure login attempt fails with an incorrect password and appropriate error is shown.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Enter registered email and incorrect password"
+      },
+      {
+        "type": "action",
+        "description": "Submit login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login failure message is displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Access protected routes without authentication",
+    "description": "Verify that accessing dashboard, settings, or saved summaries pages without login redirects to login page.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to navigate directly to /dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify redirect to login page"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to navigate directly to /settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify redirect to login page"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to navigate directly to /saved-summaries"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify redirect to login page"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Submit valid YouTube URL for transcription",
+    "description": "Check that submitting a valid YouTube link initiates audio extraction and transcription correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to home page"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid YouTube video URL"
+      },
+      {
+        "type": "action",
+        "description": "Select AI provider (Google Gemini or OpenAI)"
+      },
+      {
+        "type": "action",
+        "description": "Submit for transcription"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify real-time progress updates show extraction, transcription, and summarization stages"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm transcription, summary, and key topics appear after processing"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Upload supported audio file for transcription",
+    "description": "Verify that uploading a supported audio file triggers transcription and summarization using the selected AI provider.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to home page"
+      },
+      {
+        "type": "action",
+        "description": "Upload a supported audio format file"
+      },
+      {
+        "type": "action",
+        "description": "Select AI provider"
+      },
+      {
+        "type": "action",
+        "description": "Submit for processing"
+      },
+      {
+        "type": "assertion",
+        "description": "Check real-time streaming progress bar updates"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate full transcription, summary, and key topics are displayed upon completion"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Submit invalid YouTube URL",
+    "description": "Ensure that submitting an invalid or malformed YouTube URL prompts a user-friendly error message without system crash.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and access home page"
+      },
+      {
+        "type": "action",
+        "description": "Enter an invalid YouTube URL string"
+      },
+      {
+        "type": "action",
+        "description": "Attempt transcription submission"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an error notification indicating invalid URL format appears"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Upload unsupported audio file format",
+    "description": "Confirm system blocks upload of unsupported audio file types and displays appropriate error message.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and go to home page"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to upload unsupported file format (e.g., .exe or .txt)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error dialog stating unsupported file format is shown"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Real-time progress streaming accuracy",
+    "description": "Validate that progress updates for extraction, transcription, and summarization are streamed in real-time with no significant delays.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Initiate transcription from YouTube URL or upload"
+      },
+      {
+        "type": "assertion",
+        "description": "Observe live progress updates continuously representing extraction, transcription, and summarization stages"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm updates end promptly when processing completes"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Save and retrieve transcription results",
+    "description": "Ensure that after transcription completes, the full transcription, summary, and key topics are correctly saved and can be retrieved from the dashboard or saved summaries archive.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete a transcription job"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to dashboard and reviewed saved entries"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the transcription, summary, and key topics appear and match original output"
+      },
+      {
+        "type": "action",
+        "description": "Open saved summaries page"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the previously saved items are listed and accessible"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Manage AI provider API keys securely",
+    "description": "Verify users can add, update, and retrieve their Google Gemini and OpenAI API keys in the settings page securely.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and go to settings page"
+      },
+      {
+        "type": "action",
+        "description": "Add a valid API key for Google Gemini"
+      },
+      {
+        "type": "action",
+        "description": "Save the API key"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the API key is saved and shown securely (masked or encrypted if applicable)"
+      },
+      {
+        "type": "action",
+        "description": "Update the OpenAI API key with new value"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm updates are persisted and retrieved accurately on page reload"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Ensure temporary uploaded audio files are deleted after processing",
+    "description": "Verify that audio files uploaded for processing are removed from temporary storage after transcription completes to conserve storage.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform an audio file upload and transcription"
+      },
+      {
+        "type": "assertion",
+        "description": "Check server or storage to confirm temporary audio file is deleted after processing"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "UI responsiveness and rendering across supported browsers",
+    "description": "Validate that all UI components render correctly and remain usable across widely used browsers and device screen sizes.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the application on latest Chrome, Firefox, Edge, and Safari browsers"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI components render properly without misalignment or visual defects"
+      },
+      {
+        "type": "action",
+        "description": "Test UI responsiveness by resizing window or using mobile device emulator"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure layouts adjust correctly and remain usable on various screen resolutions"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Error handling for AI provider failures",
+    "description": "Simulate AI provider API failures or invalid API keys and verify user receives clear error feedback without app crash.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Configure invalid or expired API key in settings"
+      },
+      {
+        "type": "action",
+        "description": "Initiate a transcription job"
+      },
+      {
+        "type": "assertion",
+        "description": "Observe graceful error message indicating AI provider failure or invalid API key"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm app continues functioning normally after error"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Switching between AI providers for transcription",
+    "description": "Validate that user can select either Google Gemini or OpenAI providers before transcription and receive output accordingly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to home page"
+      },
+      {
+        "type": "action",
+        "description": "Input valid media input (YouTube URL or file)"
+      },
+      {
+        "type": "action",
+        "description": "Select Google Gemini as AI provider and submit"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify transcription and summary results are returned"
+      },
+      {
+        "type": "action",
+        "description": "Repeat with OpenAI selected as provider"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure transcription output is generated and displayed correctly"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Verify clear user flow from landing to results display",
+    "description": "Test the overall user journey from landing page authentication through media input, processing, to results view is seamless and intuitive.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access landing page"
+      },
+      {
+        "type": "action",
+        "description": "Register/login successfully"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to home/dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Submit media input and select AI provider"
+      },
+      {
+        "type": "assertion",
+        "description": "Observe real-time progress until transcription and summarization complete"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify results display and ability to browse saved summaries"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to settings and update API keys"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm smooth navigation and UI consistency throughout flow"
+      }
+    ]
+  }
+]

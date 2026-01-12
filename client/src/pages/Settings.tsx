@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Save, Check, AlertCircle, Key, Shield, Settings as SettingsLucide, Loader2, Sparkles, Bot } from 'lucide-react';
 
 export function Settings() {
-    const { user } = useAuth();
+    const { user, session } = useAuth();
     const [providers, setProviders] = useState([
         { id: 'gemini', name: 'Google Gemini', color: '#8b5cf6', key: '' },
         { id: 'openai', name: 'OpenAI GPT-5 Mini', color: '#10b981', key: '' }
@@ -19,8 +19,13 @@ export function Settings() {
 
     const checkConfiguredKeys = async () => {
         try {
+            const token = session?.access_token;
             const updatedProviders = await Promise.all(providers.map(async (p) => {
-                const res = await fetch(`/api/settings/keys/${p.id}?userId=${user?.id}`);
+                const res = await fetch(`/api/settings/keys/${p.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 const data = await res.json();
                 return { ...p, configured: data.configured };
             }));
@@ -39,10 +44,14 @@ export function Settings() {
         setMessage(null);
 
         try {
+            const token = session?.access_token;
             const res = await fetch('/api/settings/keys', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ provider: providerId, key: keyValue, userId: user?.id })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ provider: providerId, key: keyValue })
             });
 
             if (!res.ok) throw new Error('Falha ao salvar');

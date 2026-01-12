@@ -88,6 +88,7 @@ export function Home() {
             if (mode === 'url') {
                 const reader = response.body?.getReader();
                 const decoder = new TextDecoder();
+                let buffer = '';
 
                 if (!reader) throw new Error("Failed to read response stream");
 
@@ -96,17 +97,32 @@ export function Home() {
                     if (done) break;
 
                     const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
+                    buffer += chunk;
+
+                    // Split by newlines to handle valid SSE format
+                    const lines = buffer.split('\n');
+                    // Keep the last part in buffer (it might be incomplete)
+                    buffer = lines.pop() || '';
 
                     for (const line of lines) {
-                        if (line.startsWith('data: ')) {
+                        const trimmedLine = line.trim();
+                        if (!trimmedLine || trimmedLine === ':') continue; // Skip empty or comment lines
+
+                        if (trimmedLine.startsWith('data: ')) {
                             try {
-                                const data = JSON.parse(line.slice(6));
-                                if (data.status) setStatus(data.status);
+                                const jsonStr = trimmedLine.slice(6);
+                                const data = JSON.parse(jsonStr);
+
+                                if (data.status) {
+                                    setStatus(data.status);
+                                }
+                                if (data.result) {
+                                    setResult(data.result);
+                                    setLoading(false); // Ensure loading stops when result arrives
+                                }
                                 if (data.error) throw new Error(data.error);
-                                if (data.result) setResult(data.result);
                             } catch (e) {
-                                console.error('Error parsing SSE data:', e);
+                                console.error('Error parsing SSE line:', trimmedLine, e);
                             }
                         }
                     }
@@ -473,11 +489,11 @@ export function Home() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', color: '#94a3b8' }}>
                                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
                                     <div style={{ fontSize: '0.8rem', marginBottom: '0.3rem' }}>ENTRADA (PROMPT)</div>
-                                    <strong style={{ fontSize: '1.2rem', color: '#e2e8f0' }}>{result.usage.promptTokenCount.toLocaleString()}</strong>
+                                    <strong style={{ fontSize: '1.2rem', color: '#e2e8f0' }}>{(result.usage.promptTokenCount || 0).toLocaleString()}</strong>
                                 </div>
                                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
                                     <div style={{ fontSize: '0.8rem', marginBottom: '0.3rem' }}>SAÍDA (RESPOSTA)</div>
-                                    <strong style={{ fontSize: '1.2rem', color: '#e2e8f0' }}>{result.usage.candidatesTokenCount.toLocaleString()}</strong>
+                                    <strong style={{ fontSize: '1.2rem', color: '#e2e8f0' }}>{(result.usage.candidatesTokenCount || 0).toLocaleString()}</strong>
                                 </div>
                                 {result.usage.cachedContentTokenCount ? (
                                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
@@ -487,7 +503,7 @@ export function Home() {
                                 ) : null}
                                 <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                                     <div style={{ fontSize: '0.8rem', marginBottom: '0.3rem', color: '#c4b5fd' }}>TOTAL API</div>
-                                    <strong style={{ fontSize: '1.2rem', color: 'white' }}>{result.usage.totalTokenCount.toLocaleString()}</strong>
+                                    <strong style={{ fontSize: '1.2rem', color: 'white' }}>{(result.usage.totalTokenCount || 0).toLocaleString()}</strong>
                                 </div>
                             </div>
                         </div>

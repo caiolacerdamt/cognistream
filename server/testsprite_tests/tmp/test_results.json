@@ -1,0 +1,72 @@
+[
+  {
+    "projectId": "0cd758ff-1406-42a5-8913-7d60271dbbe2",
+    "testId": "3ac5a455-04e0-40e4-aaae-38c1e0c3d26f",
+    "userId": "946874d8-1041-70e5-de12-9d09ad9df281",
+    "title": "TC001-verify_get_api_key_configuration_status",
+    "description": "Test the GET /api/settings/keys/{provider} endpoint to verify it correctly returns the configuration status of the API key for the specified provider.",
+    "code": "import requests\n\ndef test_verify_get_api_key_configuration_status():\n    base_url = \"http://localhost:3000\"\n    provider = \"OpenAI\"  # Example provider; can be changed to any valid provider string\n    url = f\"{base_url}/api/settings/keys/{provider}\"\n\n    headers = {\n        \"Authorization\": \"Bearer test-token\"\n    }\n\n    try:\n        response = requests.get(url, headers=headers, timeout=30)\n        response.raise_for_status()\n    except requests.RequestException as e:\n        assert False, f\"Request failed: {e}\"\n\n    assert response.status_code == 200, f\"Expected status code 200 but got {response.status_code}\"\n    try:\n        data = response.json()\n    except ValueError:\n        assert False, \"Response is not valid JSON\"\n\n    assert isinstance(data, dict), \"Response JSON is not an object\"\n    assert \"configured\" in data, \"'configured' field not found in response\"\n    assert isinstance(data[\"configured\"], bool), \"'configured' field is not a boolean\"\n\ntest_verify_get_api_key_configuration_status()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-01-12T22:47:59.220Z",
+    "modified": "2026-01-12T22:48:08.733Z"
+  },
+  {
+    "projectId": "0cd758ff-1406-42a5-8913-7d60271dbbe2",
+    "testId": "80ed2eaa-f92f-4ed7-b360-2a33203cebfc",
+    "userId": "946874d8-1041-70e5-de12-9d09ad9df281",
+    "title": "TC002-verify_save_api_key_functionality",
+    "description": "Test the POST /api/settings/keys endpoint to ensure it correctly saves the API key for the specified provider and returns a success response.",
+    "code": "import requests\n\ndef verify_save_api_key_functionality():\n    base_url = \"http://localhost:3000\"\n    endpoint = \"/api/settings/keys\"\n    url = base_url + endpoint\n    headers = {\n        \"Authorization\": \"Bearer test-token\",\n        \"Content-Type\": \"application/json\"\n    }\n    payload = {\n        \"provider\": \"openai\",\n        \"key\": \"TEST_API_KEY\"\n    }\n    try:\n        response = requests.post(url, json=payload, headers=headers, timeout=30)\n        response.raise_for_status()\n        assert response.status_code == 200, f\"Expected status code 200 but got {response.status_code}\"\n    except requests.exceptions.RequestException as e:\n        assert False, f\"Request failed: {e}\"\n\nverify_save_api_key_functionality()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-01-12T22:47:59.226Z",
+    "modified": "2026-01-12T22:48:10.005Z"
+  },
+  {
+    "projectId": "0cd758ff-1406-42a5-8913-7d60271dbbe2",
+    "testId": "c7f87301-e14d-43e5-b52b-38527fac7eab",
+    "userId": "946874d8-1041-70e5-de12-9d09ad9df281",
+    "title": "TC003-verify_process_video_stream_with_sse",
+    "description": "Test the POST /api/process-video/stream endpoint to verify it processes a YouTube video URL, streams real-time progress updates via SSE, and completes transcription and summarization.",
+    "code": "import requests\n\ndef test_verify_process_video_stream_with_sse():\n    base_url = \"http://localhost:3000\"\n    url = f\"{base_url}/api/process-video/stream\"\n    headers = {\n        \"Authorization\": \"Bearer test-token\",\n        \"Accept\": \"text/event-stream\",\n        \"Content-Type\": \"application/json\"\n    }\n    payload = {\n        \"url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\",\n        \"provider\": \"OpenAI\",\n        \"apiKey\": \"TEST_API_KEY\",\n        \"userId\": \"test-user-123\"\n    }\n\n    try:\n        with requests.post(url, json=payload, headers=headers, stream=True, timeout=30) as response:\n            assert response.status_code == 200, f\"Expected status code 200, got {response.status_code}\"\n            event_data_lines = []\n            transcription_complete = False\n            summary_complete = False\n            # Parse SSE stream line by line\n            for line_bytes in response.iter_lines(decode_unicode=True):\n                if line_bytes is None or line_bytes.strip() == \"\":\n                    # End of one SSE event block\n                    if event_data_lines:\n                        # Join all data lines removing 'data: ' prefix\n                        event_data = \"\".join(l[6:] if l.startswith(\"data: \") else l for l in event_data_lines)\n                        event_data_lines = []\n                        # Basic check for progress stages and final data\n                        # Since mock is used, let's check event_data contains expected keywords\n                        # Like \"Downloading\", \"Transcribing\", \"Saving\", \"transcription\", \"summary\"\n                        lowered = event_data.lower()\n                        if \"downloading\" in lowered or \"transcribing\" in lowered or \"saving\" in lowered:\n                            # Intermediate progress events\n                            pass\n                        else:\n                            # Final event with transcription and summary expected\n                            if \"transcription\" in lowered:\n                                transcription_complete = True\n                            if \"summary\" in lowered:\n                                summary_complete = True\n                    continue\n                if line_bytes.startswith(\"data: \"):\n                    event_data_lines.append(line_bytes)\n            assert transcription_complete, \"Transcription data not found in SSE stream\"\n            assert summary_complete, \"Summary data not found in SSE stream\"\n    except requests.exceptions.RequestException as e:\n        assert False, f\"HTTP request failed: {e}\"\n\ntest_verify_process_video_stream_with_sse()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-01-12T22:47:59.232Z",
+    "modified": "2026-01-12T22:48:40.884Z"
+  },
+  {
+    "projectId": "0cd758ff-1406-42a5-8913-7d60271dbbe2",
+    "testId": "cdd04472-c479-4209-b80b-e912c8c98147",
+    "userId": "946874d8-1041-70e5-de12-9d09ad9df281",
+    "title": "TC004-verify_process_video_standard_response",
+    "description": "Test the POST /api/process-video endpoint to ensure it processes a YouTube video URL and returns the transcription and summary in a standard JSON response.",
+    "code": "import requests\n\ndef verify_process_video_standard_response():\n    base_url = \"http://localhost:3000\"\n    endpoint = \"/api/process-video\"\n    url = base_url + endpoint\n    headers = {\n        \"Authorization\": \"Bearer test-token\",\n        \"Content-Type\": \"application/json\"\n    }\n    payload = {\n        \"url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\",\n        \"provider\": \"OpenAI\",\n        \"apiKey\": \"TEST_API_KEY\",\n        \"userId\": \"test-user\"\n    }\n    try:\n        response = requests.post(url, headers=headers, json=payload, timeout=30)\n        assert response.status_code == 200, f\"Expected status code 200 but got {response.status_code}\"\n        response_json = response.json()\n        # Check expected keys in the response JSON: transcription and summary\n        assert isinstance(response_json, dict), \"Response is not a JSON object\"\n        assert \"transcription\" in response_json, \"'transcription' key not in response\"\n        assert \"summary\" in response_json, \"'summary' key not in response\"\n        # Transcription and summary should be non-empty strings\n        transcription = response_json.get(\"transcription\")\n        summary = response_json.get(\"summary\")\n        assert isinstance(transcription, str) and transcription.strip(), \"Transcription is empty or not a string\"\n        assert isinstance(summary, str) and summary.strip(), \"Summary is empty or not a string\"\n    except requests.exceptions.RequestException as e:\n        assert False, f\"Request failed: {e}\"\n\nverify_process_video_standard_response()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-01-12T22:47:59.237Z",
+    "modified": "2026-01-12T22:48:25.911Z"
+  },
+  {
+    "projectId": "0cd758ff-1406-42a5-8913-7d60271dbbe2",
+    "testId": "ec25638c-934b-4b2d-a778-f2df980ceef6",
+    "userId": "946874d8-1041-70e5-de12-9d09ad9df281",
+    "title": "TC005-verify_process_file_upload_and_processing",
+    "description": "Test the POST /api/process-file endpoint to verify it correctly handles multipart/form-data file uploads, processes the audio file, and returns the transcription and summary.",
+    "code": "import requests\n\ndef test_verify_process_file_upload_and_processing():\n    base_url = \"http://localhost:3000\"\n    endpoint = \"/api/process-file\"\n    url = base_url + endpoint\n    headers = {\n        \"Authorization\": \"Bearer test-token\"\n    }\n\n    # Use a small dummy audio content for testing (WAV header with no audio)\n    dummy_audio_content = (\n        b\"RIFF$\\x00\\x00\\x00WAVEfmt \"  # RIFF header & WAVE fmt chunk header start\n        b\"\\x10\\x00\\x00\\x00\\x01\\x00\\x01\\x00\"  # fmt chunk size, audio format (1=PCM), channels (1)\n        b\"\\x40\\x1f\\x00\\x00\\x80>\\x00\\x00\"  # sample rate 8000Hz, byte rate, block align\n        b\"\\x02\\x00\\x10\\x00data\\x00\\x00\\x00\\x00\"  # bits/sample 16, data chunk header with no data\n    )\n\n    files = {\n        \"audio\": (\"dummy.wav\", dummy_audio_content, \"audio/wav\"),\n    }\n    data = {\n        \"apiKey\": \"TEST_API_KEY\"\n    }\n\n    try:\n        response = requests.post(url, headers=headers, files=files, data=data, timeout=30)\n        assert response.status_code == 200, f\"Expected status code 200 but got {response.status_code}\"\n        json_response = response.json()\n        assert isinstance(json_response, dict), \"Response is not a JSON object\"\n        assert \"transcription\" in json_response, \"'transcription' field missing in response\"\n        assert isinstance(json_response[\"transcription\"], str) and len(json_response[\"transcription\"]) > 0, \\\n            \"'transcription' field is empty or not a string\"\n        assert \"summary\" in json_response, \"'summary' field missing in response\"\n        assert isinstance(json_response[\"summary\"], str) and len(json_response[\"summary\"]) > 0, \\\n            \"'summary' field is empty or not a string\"\n    except requests.RequestException as e:\n        assert False, f\"Request failed: {e}\"\n\ntest_verify_process_file_upload_and_processing()",
+    "testStatus": "PASSED",
+    "testError": "",
+    "testType": "BACKEND",
+    "createFrom": "mcp",
+    "created": "2026-01-12T22:47:59.242Z",
+    "modified": "2026-01-12T22:48:11.368Z"
+  }
+]
