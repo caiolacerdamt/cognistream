@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 // Helper to find yt-dlp binary
 const getYtDlpPath = () => {
@@ -24,32 +25,55 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
         console.log(`Using yt-dlp binary at: "${binaryPath}"`);
         console.log(`Downloading audio from ${videoUrl}...`);
 
-        // Spawn process directly to handle spaces in paths correctly
-        const process = spawn(binaryPath, [
+        // Cookie handling strategy
+        let cookiePath: string | null = null;
+        const envCookies = process.env.YOUTUBE_COOKIES;
+        if (envCookies) {
+            const tempDir = os.tmpdir();
+            cookiePath = path.join(tempDir, `yt-cookies-${timestamp}.txt`);
+            fs.writeFileSync(cookiePath, envCookies);
+            console.log(`Using cookies from env at ${cookiePath}`);
+        }
+
+        const args = [
             videoUrl,
             '--extract-audio',
             '--audio-format', 'mp3',
             '--output', outputTemplate,
             '--no-playlist',
-            '--js-runtimes', 'node' // Force use of Node.js for challenges
-        ], {
-            shell: false // Important for security and path handling
+            '--js-runtimes', 'node',
+            // Strategy 1: User-Agent Spoofing
+            '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        ];
+
+        // Strategy 2: Cookies (Optional)
+        if (cookiePath) {
+            args.push('--cookies', cookiePath);
+        }
+
+        const ytDlpProcess = spawn(binaryPath, args, {
+            shell: false
         });
 
         let stderrOutput = '';
         let stdoutOutput = '';
 
-        process.stdout.on('data', (data) => {
+        ytDlpProcess.stdout.on('data', (data) => {
             console.log(`dt-dlp out: ${data}`);
             stdoutOutput += data.toString();
         });
 
-        process.stderr.on('data', (data) => {
+        ytDlpProcess.stderr.on('data', (data) => {
             console.error(`yt-dlp err: ${data}`);
             stderrOutput += data.toString();
         });
 
-        process.on('close', (code) => {
+        ytDlpProcess.on('close', (code) => {
+            // Cleanup cookie file
+            if (cookiePath && fs.existsSync(cookiePath)) {
+                fs.unlinkSync(cookiePath);
+            }
+
             if (code === 0) {
                 const expectedPath = path.join(outputDir, `${timestamp}.mp3`);
                 if (fs.existsSync(expectedPath)) {
@@ -63,7 +87,10 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
             }
         });
 
-        process.on('error', (err) => {
+        ytDlpProcess.on('error', (err) => {
+            if (cookiePath && fs.existsSync(cookiePath)) {
+                fs.unlinkSync(cookiePath);
+            }
             reject(err);
         });
     });
