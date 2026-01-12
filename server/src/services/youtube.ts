@@ -73,7 +73,7 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
 
         // Wait for file to be fully written
         await new Promise((resolve, reject) => {
-            fileStream.on('finish', resolve);
+            fileStream.on('finish', () => resolve(outputPath));
             fileStream.on('error', reject);
         });
 
