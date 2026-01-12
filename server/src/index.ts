@@ -27,10 +27,12 @@ if (!fs.existsSync(DOWNLOAD_DIR)) {
 const upload = multer({ dest: 'uploads/' });
 
 // Helper to validate and select service
-const processAudio = async (filePath: string, options: any) => {
+// @ts-ignore
+const processAudio = async (filePath: string, options: any, onProgress?: (status: string) => void) => {
     const { provider, apiKey, originalUrl, userId } = options;
 
     console.log(`Processing with ${provider || 'gemini'}...`);
+    if (onProgress) onProgress(`Iniciando processamento com ${provider || 'gemini'}...`);
 
     // Fetch key from DB if not provided
     let effectiveApiKey = apiKey;
@@ -43,6 +45,7 @@ const processAudio = async (filePath: string, options: any) => {
         if (!keyToUse) {
             throw new Error("API Key da OpenAI não encontrada. Por favor, configure nos ajustes.");
         }
+        if (onProgress) onProgress('Transcrevendo áudio com Whisper (OpenAI)...');
         return await processWithOpenAI(filePath, keyToUse);
     } else {
         // Gemini (Default)
@@ -50,6 +53,7 @@ const processAudio = async (filePath: string, options: any) => {
         if (!keyToUse) {
             throw new Error("API Key do Gemini não encontrada. Por favor, configure nos ajustes.");
         }
+        if (onProgress) onProgress('Enviando para Gemini 1.5 Flash...');
         return await processWithGemini(filePath, keyToUse);
     }
 }
@@ -79,6 +83,81 @@ app.post('/api/settings/keys', async (req, res) => {
         res.json({ success: true });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/process-video/stream', async (req, res): Promise<any> => {
+    // SSE Setup
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const sendEvent = (data: any) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+        const { url, provider, apiKey, userId } = req.body;
+        if (!url) {
+            sendEvent({ error: 'URL is required' });
+            return res.end();
+        }
+
+        console.log(`Processing URL (Stream): ${url}`);
+        sendEvent({ status: 'Inicializando...' });
+
+        // 1. Extract Audio
+        // @ts-ignore
+        const audioPath = await extractAudio(url, DOWNLOAD_DIR, (status) => {
+            sendEvent({ status });
+        });
+        console.log(`Audio extracted to: ${audioPath}`);
+        sendEvent({ status: 'Áudio extraído. Iniciando transcrição...' });
+
+        // 2. Transcribe & Summarize (with Provider selection)
+        // @ts-ignore
+        const result = await processAudio(audioPath, { provider, apiKey, originalUrl: url, userId }, (status) => {
+            sendEvent({ status });
+        });
+        console.log('Transcription complete');
+        sendEvent({ status: 'Transcrição concluída. Salvando...' });
+
+        // 3. Save to Supabase
+        if (result && result.summary) {
+            const usageData = {
+                provider: provider || 'gemini',
+                model: provider === 'openai' ? 'gpt-5-mini' : 'gemini-2.5-flash',
+                serviceType: 'transcription_and_summary',
+                inputTokens: result.usage?.promptTokenCount || 0,
+                outputTokens: result.usage?.candidatesTokenCount || 0,
+                audioDuration: result.duration || 0
+            };
+
+            // If userId is present, save to DB
+            if (userId) {
+                await saveProcessingResult(
+                    userId,
+                    url,
+                    result.transcription,
+                    result.summary,
+                    result.key_topics || [],
+                    usageData
+                );
+                console.log('Saved to Supabase');
+            }
+        }
+
+        // Cleanup audio file
+        if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+
+        // Send Final Result
+        sendEvent({ status: 'Concluído!', result });
+        res.end();
+
+    } catch (error: any) {
+        console.error('Error processing video:', error);
+        sendEvent({ error: error.message || 'Internal server error' });
+        res.end();
     }
 });
 
