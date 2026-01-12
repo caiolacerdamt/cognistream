@@ -31,7 +31,19 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
         if (envCookies) {
             const tempDir = os.tmpdir();
             cookiePath = path.join(tempDir, `yt-cookies-${timestamp}.txt`);
-            fs.writeFileSync(cookiePath, envCookies);
+
+            let cookiesContent = envCookies;
+            // Try to decode base64 if it doesn't look like a netscape header
+            if (!envCookies.includes('# Netscape HTTP Cookie File')) {
+                try {
+                    cookiesContent = Buffer.from(envCookies, 'base64').toString('utf-8');
+                    console.log('Decoded cookies from Base64');
+                } catch (e) {
+                    console.warn('Failed to decode cookies as base64, using raw value');
+                }
+            }
+
+            fs.writeFileSync(cookiePath, cookiesContent);
             console.log(`Using cookies from env at ${cookiePath}`);
         }
 
