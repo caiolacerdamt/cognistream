@@ -30,17 +30,23 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
             '--extract-audio',
             '--audio-format', 'mp3',
             '--output', outputTemplate,
-            '--no-playlist'
+            '--no-playlist',
+            '--js-runtimes', 'node' // Force use of Node.js for challenges
         ], {
             shell: false // Important for security and path handling
         });
 
+        let stderrOutput = '';
+        let stdoutOutput = '';
+
         process.stdout.on('data', (data) => {
             console.log(`dt-dlp out: ${data}`);
+            stdoutOutput += data.toString();
         });
 
         process.stderr.on('data', (data) => {
             console.error(`yt-dlp err: ${data}`);
+            stderrOutput += data.toString();
         });
 
         process.on('close', (code) => {
@@ -52,7 +58,8 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
                     reject(new Error('Download success but file not found'));
                 }
             } else {
-                reject(new Error(`yt-dlp process exited with code ${code}`));
+                // Include stderr in the error message for better debugging
+                reject(new Error(`yt-dlp process exited with code ${code}. Error details: ${stderrOutput}`));
             }
         });
 

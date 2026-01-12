@@ -31,7 +31,7 @@ RUN npm run build
 FROM node:20-slim
 
 # Install system dependencies (ffmpeg, python3 for youtube-dl)
-RUN apt-get update && apt-get install -y ffmpeg python3 ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg python3 python-is-python3 ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
