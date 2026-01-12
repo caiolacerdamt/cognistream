@@ -40,33 +40,36 @@ export function Home() {
     const [url, setUrl] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState('');
     // @ts-ignore
     const [result, setResult] = useState<Result | null>(null);
     const [error, setError] = useState('');
 
     const handleSubmit = async () => {
         setLoading(true);
+        setStatus('Iniciando...');
         setError('');
         setResult(null);
 
         try {
-            const endpoint = mode === 'url' ? '/api/process-video' : '/api/process-file';
+            // Use stream endpoint for URL mode
+            const endpoint = mode === 'url' ? '/api/process-video/stream' : '/api/process-file';
 
             let body;
             let headers: Record<string, string> = {};
 
             if (mode === 'url') {
                 if (!url.trim()) throw new Error("Por favor, cole um link do YouTube");
-
                 body = JSON.stringify({ url, provider, userId: user?.id });
                 headers = { 'Content-Type': 'application/json' };
             } else {
                 if (!file) throw new Error("Selecione um arquivo de áudio ou vídeo");
+                // File upload usually doesn't support SSE easily in this setup without XHR/fetch tricks, 
+                // keeping file upload as standard for now (or minimal update)
                 const formData = new FormData();
                 formData.append('audio', file);
                 formData.append('provider', provider);
                 if (user?.id) formData.append('userId', user.id);
-
                 body = formData;
             }
 
@@ -81,12 +84,44 @@ export function Home() {
                 throw new Error(errData.error || 'Falha ao processar solicitação');
             }
 
-            const data = await response.json();
-            setResult(data);
+            // Handle Stream for URL mode
+            if (mode === 'url') {
+                const reader = response.body?.getReader();
+                const decoder = new TextDecoder();
+
+                if (!reader) throw new Error("Failed to read response stream");
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.status) setStatus(data.status);
+                                if (data.error) throw new Error(data.error);
+                                if (data.result) setResult(data.result);
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Standard File Upload response
+                const data = await response.json();
+                setResult(data);
+            }
+
         } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
+            setStatus('');
         }
     };
 
@@ -347,7 +382,7 @@ export function Home() {
                     >
                         {loading ? (
                             <>
-                                <Loader2 size={20} className="animate-spin" /> Processando...
+                                <Loader2 size={20} className="animate-spin" /> {status || 'Processando...'}
                             </>
                         ) : (
                             <>
