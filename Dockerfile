@@ -30,8 +30,8 @@ RUN npm run build
 # Stage 3: Production Runtime
 FROM node:20-slim
 
-# Install system dependencies (ca-certificates for fetch)
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (ffmpeg, python3 for youtube-dl)
+RUN apt-get update && apt-get install -y ffmpeg python3 python-is-python3 ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

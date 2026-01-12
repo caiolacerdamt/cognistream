@@ -1,118 +1,72 @@
-import { Innertube, UniversalCache } from 'youtubei.js';
-import fs from 'fs';
+import { spawn } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 
-let yt: Innertube | null = null;
+// Helper to find yt-dlp binary
+const getYtDlpPath = () => {
+    // In production/docker, it might be in node_modules or global
+    // But since we use youtube-dl-exec, let's try to locate its binary or use system default
+    const localPath = path.join(__dirname, '../../node_modules/youtube-dl-exec/bin/yt-dlp.exe'); // Windows
+    const linuxPath = path.join(__dirname, '../../node_modules/youtube-dl-exec/bin/yt-dlp');     // Linux/Mac
 
-// Initialize the client (Singleton pattern)
-const getClient = async () => {
-    if (!yt) {
-        console.log('Initializing YouTube InnerTube client (ANDROID)...');
+    if (fs.existsSync(localPath)) return localPath;
+    if (fs.existsSync(linuxPath)) return linuxPath;
 
-        // Prepare options
-        const options: any = {
-            cache: new UniversalCache(false),
-            generate_session_locally: true,
-            // @ts-ignore
-            device_client: 'ANDROID'
-        };
-
-        // Handle Cookies if provided (bypasses "Login Required" / IP blocks)
-        const envCookies = process.env.YOUTUBE_COOKIES;
-        if (envCookies) {
-            try {
-                // Determine if base64 or raw string
-                // A simple heuristic: if it contains "APSID=" it's likely raw, otherwise try decode
-                let cookieString = envCookies;
-
-                // If it looks like base64 (no common cookie parts), try decoding
-                if (!envCookies.includes('APSID=') && !envCookies.includes('VISITOR_INFO1_LIVE=')) {
-                    const decoded = Buffer.from(envCookies, 'base64').toString('utf-8');
-                    // Validation: check if checked decoded string looks like cookies
-                    if (decoded.includes('APSID=') || decoded.includes('VISITOR_INFO1_LIVE=')) {
-                        cookieString = decoded;
-                        console.log('Decoded YOUTUBE_COOKIES from Base64');
-                    }
-                }
-
-                // Innertube expects the cookie header string
-                options.cookie = cookieString;
-                console.log('Using provided YouTube Cookies for authentication');
-            } catch (e) {
-                console.warn('Failed to process YOUTUBE_COOKIES, proceeding as guest', e);
-            }
-        }
-
-        yt = await Innertube.create(options);
-        console.log('YouTube client initialized.');
-    }
-    return yt;
-};
-
-// Helper to extract Video ID
-const getVideoId = (url: string): string => {
-    const patterns = [
-        /(?:v=|\/)([0-9A-Za-z_-]{11}).*/,
-        /(?:youtu\.be\/)([0-9A-Za-z_-]{11})/,
-        /^([0-9A-Za-z_-]{11})$/
-    ];
-
-    for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-            return match[1];
-        }
-    }
-    throw new Error('Invalid YouTube URL or ID');
+    return 'yt-dlp'; // Fallback to global path
 };
 
 export const extractAudio = async (videoUrl: string, outputDir: string): Promise<string> => {
-    const timestamp = Date.now();
-    const outputPath = path.join(outputDir, `${timestamp}.mp3`);
+    return new Promise((resolve, reject) => {
+        const timestamp = Date.now();
+        const outputTemplate = path.join(outputDir, `${timestamp}.%(ext)s`);
+        const binaryPath = getYtDlpPath();
 
-    try {
-        const videoId = getVideoId(videoUrl);
-        console.log(`Processing video ID: ${videoId}`);
+        console.log(`Using yt-dlp binary at: "${binaryPath}"`);
+        console.log(`Downloading audio from ${videoUrl}...`);
 
-        const youtube = await getClient();
+        const args = [
+            videoUrl,
+            '--extract-audio',
+            '--audio-format', 'mp3',
+            '--output', outputTemplate,
+            '--no-playlist',
+            // Fixes for bot detection
+            '--js-runtimes', 'node',
+            '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        ];
 
-        console.log('Fetching video info...');
-        const info = await youtube.getBasicInfo(videoId);
-        console.log(`Title: ${info.basic_info.title}`);
-
-        console.log('Starting audio download...');
-
-        // Get the stream
-        const stream = await youtube.download(videoId, {
-            type: 'audio', // Download audio only
-            quality: 'best'
+        const ytDlpProcess = spawn(binaryPath, args, {
+            shell: false
         });
 
-        console.log('Writing stream to file...');
-        const fileStream = fs.createWriteStream(outputPath);
+        let stderrOutput = '';
+        let stdoutOutput = '';
 
-        // Stream reader loop
-        const reader = stream.getReader();
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            fileStream.write(value);
-        }
-
-        fileStream.end();
-
-        // Wait for file to be fully written
-        await new Promise<void>((resolve, reject) => {
-            fileStream.on('finish', () => resolve());
-            fileStream.on('error', reject);
+        ytDlpProcess.stdout.on('data', (data) => {
+            console.log(`yt-dlp out: ${data}`);
+            stdoutOutput += data.toString();
         });
 
-        console.log(`Audio saved to: ${outputPath}`);
-        return outputPath;
+        ytDlpProcess.stderr.on('data', (data) => {
+            console.error(`yt-dlp err: ${data}`);
+            stderrOutput += data.toString();
+        });
 
-    } catch (error) {
-        console.error('Error in extractAudio:', error);
-        throw error;
-    }
+        ytDlpProcess.on('close', (code) => {
+            if (code === 0) {
+                const expectedPath = path.join(outputDir, `${timestamp}.mp3`);
+                if (fs.existsSync(expectedPath)) {
+                    resolve(expectedPath);
+                } else {
+                    reject(new Error('Download success but file not found'));
+                }
+            } else {
+                reject(new Error(`yt-dlp process exited with code ${code}. Error details: ${stderrOutput}`));
+            }
+        });
+
+        ytDlpProcess.on('error', (err) => {
+            reject(err);
+        });
+    });
 };
