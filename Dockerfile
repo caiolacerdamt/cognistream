@@ -2,7 +2,7 @@
 FROM node:20-slim AS client-build
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install
+RUN rm -f package-lock.json && npm install
 
 # Build Args for Client
 ARG VITE_SUPABASE_URL
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/
 
 WORKDIR /app/server
 COPY server/package*.json ./
-RUN npm install
+RUN rm -f package-lock.json && npm install
 COPY server/ ./
 RUN npm run build
 
