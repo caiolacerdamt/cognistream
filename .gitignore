@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+.env
+*.local
+.DS_Store
+.vscode
+.idea
+*.log
+downloads/
+
+
+# Generated files
+*player-script.js
