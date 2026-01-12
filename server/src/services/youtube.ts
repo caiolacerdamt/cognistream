@@ -15,14 +15,14 @@ const getYtDlpPath = () => {
     return 'yt-dlp'; // Fallback to global path
 };
 
-export const extractAudio = async (videoUrl: string, outputDir: string): Promise<string> => {
+export const extractAudio = async (videoUrl: string, outputDir: string, onProgress?: (status: string) => void): Promise<string> => {
     return new Promise((resolve, reject) => {
         const timestamp = Date.now();
         const outputTemplate = path.join(outputDir, `${timestamp}.%(ext)s`);
         const binaryPath = getYtDlpPath();
 
         console.log(`Using yt-dlp binary at: "${binaryPath}"`);
-        console.log(`Downloading audio from ${videoUrl}...`);
+        if (onProgress) onProgress('Iniciando download do áudio...');
 
         const args = [
             videoUrl,
@@ -43,8 +43,20 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
         let stdoutOutput = '';
 
         ytDlpProcess.stdout.on('data', (data) => {
-            console.log(`yt-dlp out: ${data}`);
-            stdoutOutput += data.toString();
+            const output = data.toString();
+            console.log(`yt-dlp out: ${output}`);
+            stdoutOutput += output;
+
+            // Parse progress from yt-dlp output
+            if (onProgress) {
+                // Example: [download]  23.5% of 10.00MiB at  2.00MiB/s ETA 00:03
+                const match = output.match(/\[download\]\s+(\d+\.?\d*%).*/);
+                if (match) {
+                    onProgress(`Baixando: ${match[1]}...`);
+                } else if (output.includes('[ExtractAudio]')) {
+                    onProgress('Extraindo áudio...');
+                }
+            }
         });
 
         ytDlpProcess.stderr.on('data', (data) => {
@@ -56,6 +68,7 @@ export const extractAudio = async (videoUrl: string, outputDir: string): Promise
             if (code === 0) {
                 const expectedPath = path.join(outputDir, `${timestamp}.mp3`);
                 if (fs.existsSync(expectedPath)) {
+                    if (onProgress) onProgress('Download concluído.');
                     resolve(expectedPath);
                 } else {
                     reject(new Error('Download success but file not found'));
